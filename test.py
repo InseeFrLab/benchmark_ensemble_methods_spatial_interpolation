@@ -52,8 +52,6 @@ os.mkdir("./rawdata")
 os.mkdir("./data")
 os.mkdir("./finaldata")
 
-
-py7zr
 # %%
 # URL of the BD ALTI page
 url = "https://geoservices.ign.fr/bdalti"
