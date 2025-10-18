@@ -55,10 +55,20 @@ os.mkdir("./finaldata")
 
 py7zr
 # %%
-# Example usage
-asc_urls = [
-    'https://data.geopf.fr/telechargement/download/BDALTI/BDALTIV2_2-0_25M_ASC_LAMB93-IGN69_D001_2023-08-08/BDALTIV2_2-0_25M_ASC_LAMB93-IGN69_D001_2023-08-08.7z'
-]
+# URL of the BD ALTI page
+url = "https://geoservices.ign.fr/bdalti"
+
+# Fetch the HTML content
+html = requests.get(url).text
+
+# Regex pattern to find all BDALTI download links
+pattern = r"https://data\.geopf\.fr/telechargement/download/BDALTI/[^\s\"']+7z"
+
+# Extract all matching URLs
+urls = re.findall(pattern, html)
+
+# Remove duplicates and sort
+urls = sorted(set(urls))
 
 # %%
 archivename = asc_urls[0].rsplit('/', 1)[-1]
