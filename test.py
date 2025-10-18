@@ -1,10 +1,23 @@
 # %%
 import os
+import glob
 import re
 import requests
 from osgeo import gdal
 import s3fs
 import py7zr
+
+# Function to list all files in a directory
+def list_files_recursive(path='.'):
+    list_files = []
+    for entry in os.listdir(path):
+        full_path = os.path.join(path, entry)
+        if os.path.isdir(full_path):
+            list_files_recursive(full_path)
+        else:
+            print(full_path)
+            list_files.append(full_path)
+    return(list_files)
 
 # Function to download a file from a URL
 def download_file(url, local_path):
@@ -40,6 +53,7 @@ def process_asc_files(asc_urls, local_dir, bucket_name):
 # %%
 os.mkdir("./rawdata")
 os.mkdir("./data")
+os.mkdir("./finaldata")
 
 
 py7zr
@@ -53,11 +67,47 @@ asc_urls = [
 archivename = asc_urls[0].rsplit('/', 1)[-1]
 download_file(asc_urls[0], "./rawdata/")
 # %%
+# Extract all .asc files
 with py7zr.SevenZipFile("./rawdata/"+archivename, mode='r') as archive:
-    list_files = [f for f in archive.namelist() if re.search('1_DONNEES_LIVRAISON.*\\.asc', f)]
-    archive.extract(path='./data/', targets=list_files)
+    list_compressed_files = [f for f in archive.namelist() if re.search('1_DONNEES_LIVRAISON.*\\.asc', f)]
+    archive.extract(path='./data/', targets=list_compressed_files)
 
+# %% List the files
+list_asc_files = glob.glob("data/**/*.asc", recursive=True)
+print(list_asc_files)
+# %%
+# Convert the files to GeoTiff
+convert_asc_to_tiff(
+    list_asc_files[0],
+    list_asc_files[0].rsplit('/', 1)[-1]
+)
 
+# %%
+
+gdal.BuildVRT('out.vrt',glob.glob("data/**/*.asc", recursive=True))
+gdal.Translate('out.tif','out.vrt',format='gtiff')
+# %%
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Open the TIFF file
+dataset = gdal.Open('out.tif', gdal.GA_ReadOnly)
+band = dataset.GetRasterBand(1)
+# Get NODATA value
+nodata = band.GetNoDataValue()
+
+# Read raster data as array
+array = band.ReadAsArray()
+
+# Mask nodata values by setting them to np.nan
+if nodata is not None:
+    array = np.where(array == nodata, np.nan, array)
+
+# Plot using matplotlib
+plt.imshow(array, cmap='terrain')
+plt.colorbar()
+plt.title('Map from GeoTIFF using GDAL')
+plt.show()
 
 # %%
 local_directory = 'downloaded_asc'
