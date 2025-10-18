@@ -7,24 +7,21 @@ from osgeo import gdal
 import s3fs
 import py7zr
 
-# Function to list all files in a directory
-def list_files_recursive(path='.'):
-    list_files = []
-    for entry in os.listdir(path):
-        full_path = os.path.join(path, entry)
-        if os.path.isdir(full_path):
-            list_files_recursive(full_path)
-        else:
-            print(full_path)
-            list_files.append(full_path)
-    return(list_files)
-
 # Function to download a file from a URL
 def download_file(url, local_path):
     response = requests.get(url)
     with open(local_path+url.rsplit('/', 1)[-1], 'wb') as f:
         f.write(response.content)
     print(f"Downloaded {url} to {local_path+url.rsplit('/', 1)[-1]}")
+
+# Function to extract files to a path
+def extract_files(archive_path, path, pattern = ""):
+    # Extract all .asc files
+    with py7zr.SevenZipFile(archive_path, mode='r') as archive:
+        archive.extract(
+            path=path, 
+            targets=[f for f in archive.namelist() if re.search(pattern, f)]
+        )
 
 # Function to convert ASC to GeoTIFF using GDAL
 def convert_asc_to_tiff(asc_path, tiff_path):
