@@ -1,7 +1,7 @@
 # Get the name of the repo export 
 MY_REPO=$(ls -d "/home/onyxia/work"/*/ | head -n 1 | xargs basename) 
 
-# Install GDAL
+# Install the last version of GDAL
 curl -sL "https://url.geocarpentry.org/gdal-ubuntu" | bash
 
 # Install dependencies
