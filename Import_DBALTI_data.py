@@ -83,12 +83,12 @@ for file_url in asc_urls:
 
     print("Writing data to S3")
     os.system(f"mc cp BDALTI.tif s3/oliviermeslin/BDALTI/BDALTI_{departement}.tif")
-# %%
-
 
 # %%
+# Map the altitude
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 # Open the TIFF file
 dataset = gdal.Open('out.tif', gdal.GA_ReadOnly)
@@ -108,18 +108,3 @@ plt.imshow(array, cmap='terrain')
 plt.colorbar()
 plt.title('Map from GeoTIFF using GDAL')
 plt.show()
-
-# %%
-local_directory = 'downloaded_asc'
-s3_bucket = 'your-s3-bucket-name'
-
-process_asc_files(asc_urls, local_directory, s3_bucket)
-
-
-
-https://data.geopf.fr/telechargement/download/BDALTI/BDALTIV2_2-0_25M_ASC_LAMB93-IGN69_D001_2023-08-08/BDALTIV2_2-0_25M_ASC_LAMB93-IGN69_D001_2023-08-08.7z
-
-
-
-
-# %%
