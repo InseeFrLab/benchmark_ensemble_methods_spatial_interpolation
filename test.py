@@ -29,32 +29,6 @@ def convert_asc_to_tiff(asc_path, tiff_path):
     gdal.Translate(tiff_path, asc_path, format='GTiff')
     print(f"Converted {asc_path} to {tiff_path}")
 
-def write_file_to_s3(file, s3_path: str):
-    # Write file to S3
-    with fs.open(s3_path, 'wb') as f:
-        df.write(f)
-    return True
-
-# Main process
-def process_asc_files(asc_urls, local_dir, bucket_name):
-    if not os.path.exists(local_dir):
-        os.makedirs(local_dir)
-
-    for url in asc_urls:
-        filename = url.split('/')[-1]
-        asc_path = os.path.join(local_dir, filename)
-        tiff_filename = filename.replace('.asc', '.tif')
-        tiff_path = os.path.join(local_dir, tiff_filename)
-
-        # Download ASC file
-        download_file(url, asc_path)
-
-        # Convert ASC to GeoTIFF
-        convert_asc_to_tiff(asc_path, tiff_path)
-
-        # Upload GeoTIFF to S3
-        upload_to_s3(tiff_path, bucket_name, tiff_filename)
-
 # %%
 # URL of the BD ALTI page
 url = "https://geoservices.ign.fr/bdalti"
@@ -72,41 +46,43 @@ asc_urls = re.findall(pattern, html)
 asc_urls = sorted(set(asc_urls))
 
 # %%
-# Prepare folders
-shutil.rmtree("./rawdata", ignore_errors=True)
-shutil.rmtree("./data", ignore_errors=True)
-shutil.rmtree("./finaldata", ignore_errors=True)
-os.mkdir("./rawdata")
-os.mkdir("./data")
-os.mkdir("./finaldata")
+for file_url in asc_urls:
+    # Detect departement
+    prefix = r'https://data\.geopf\.fr/telechargement/download/BDALTI/BDALTIV2_2-0_25M_ASC_LAMB93-IGN69_'
 
-# %%
-archivename = asc_urls[0].rsplit('/', 1)[-1]
-download_file(asc_urls[0], "./rawdata/")
-# %%
-# Extract all .asc files
-with py7zr.SevenZipFile("./rawdata/"+archivename, mode='r') as archive:
-    list_compressed_files = [f for f in archive.namelist() if re.search('1_DONNEES_LIVRAISON.*\\.asc', f)]
-    archive.extract(path='./data/', targets=list_compressed_files)
+    pattern = prefix + r'([^_]+)'
 
-# %%
-# Convert the files to GeoTiff
-prefix = r'https://data\.geopf\.fr/telechargement/download/BDALTI/BDALTIV2_2-0_25M_ASC_LAMB93-IGN69_'
+    match = re.search(pattern, file_url)
+    if match:
+        departement = match.group(1)
+        print(departement)
+    else:
+        raise ValueError("No departement found")
+        
+    # Prepare folders
+    shutil.rmtree("./rawdata", ignore_errors=True)
+    shutil.rmtree("./data", ignore_errors=True)
+    shutil.rmtree("./finaldata", ignore_errors=True)
+    os.mkdir("./rawdata")
+    os.mkdir("./data")
+    os.mkdir("./finaldata")
 
-# Match prefix, then capture everything up to next underscore (non-greedy)
-pattern = prefix + r'([^_]+)'
+    print("Downloading data")
+    archivename = file_url.rsplit('/', 1)[-1]
+    download_file(file_url, "./rawdata/")
 
-match = re.search(pattern, asc_urls[0])
-if match:
-    departement = match.group(1)
-    print(departement)
-else:
-    raise ValueError("No departement found")
+    # Extract all .asc files
+    print("Extracting data")
+    with py7zr.SevenZipFile("./rawdata/"+archivename, mode='r') as archive:
+        list_compressed_files = [f for f in archive.namelist() if re.search('1_DONNEES_LIVRAISON.*\\.asc', f)]
+        archive.extract(path='./data/', targets=list_compressed_files)
 
+    print("Converting data")
+    gdal.BuildVRT('out.vrt',glob.glob("data/**/*.asc", recursive=True))
+    gdal.Translate('BDALTI.tif','out.vrt',format='gtiff')
 
-gdal.BuildVRT('out.vrt',glob.glob("data/**/*.asc", recursive=True))
-gdal.Translate('BDALTI.tif','out.vrt',format='gtiff')
-os.system(f"mc cp BDALTI.tif s3/oliviermeslin/BDALTI/BDALTI_{departement}.tif")
+    print("Writing data to S3")
+    os.system(f"mc cp BDALTI.tif s3/oliviermeslin/BDALTI/BDALTI_{departement}.tif")
 # %%
 
 
