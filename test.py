@@ -48,34 +48,6 @@ os.system("mc cp BDALTI.dbf s3/oliviermeslin/BDALTI2/BDALTI_D035.dbf")
 os.system("mc cp BDALTI.shx s3/oliviermeslin/BDALTI2/BDALTI_D035.shx")
 
 # %%
-import numpy as np
-band_data = src_band.ReadAsArray()
-print(np.unique(band_data))
-# %%
-import rasterio
-from rasterio.windows import Window
-
-# Open the GeoTIFF file
-with rasterio.open("BDALTI.tif") as src:
-    # Read the first 10 rows across the entire width
-    window = Window(col_off=0, row_off=0, width=src.width, height=10)
-    data = src.read(1, window=window)  # Read band 1
-    
-    # Print the shape and the array content (first 10 rows)
-    print(data.shape)
-    print(data)
-
-
-# %%
-from osgeo import gdal
-
-# Open the GeoTIFF
-ds = gdal.Open('BDALTI.tif')
-
-# Get geotransform, a 6-element tuple: (top left x, pixel width, skew x, top left y, skew y, pixel height)
-gt = ds.GetGeoTransform()
-print(gt)
-# %%
 from osgeo import gdal
 import numpy as np
 import pandas as pd
@@ -124,5 +96,20 @@ df = pd.DataFrame({
 
 
 # %%
-df.query("value != 0")
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Assuming df columns: x, y, value
+# Pivot to wide format to get 2D array for plotting
+pivot_table = df.pivot(index='y', columns='x', values='value')
+
+plt.figure()
+plt.imshow(pivot_table, origin='lower', cmap='terrain', aspect='auto')
+plt.colorbar(label='Raster value')
+plt.xlabel('X coordinate')
+plt.ylabel('Y coordinate')
+plt.title('Raster Plot from Pandas DataFrame')
+plt.show()
+
+
 # %%
