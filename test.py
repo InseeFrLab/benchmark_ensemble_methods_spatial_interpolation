@@ -1,11 +1,13 @@
 # %%
 import numpy as np
+import polars as pl
 import matplotlib.pyplot as plt
 import os
 from osgeo import gdal
 
 os.system(f"mc cp s3/oliviermeslin/BDALTI/BDALTI_D075.tif BDALTI.tif")
 
+# %%
 # Open the TIFF file
 dataset = gdal.Open('BDALTI.tif', gdal.GA_ReadOnly)
 band = dataset.GetRasterBand(1)
