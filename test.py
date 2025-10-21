@@ -50,10 +50,6 @@ os.system("mc cp BDALTI.dbf s3/oliviermeslin/BDALTI2/BDALTI_D035.dbf")
 os.system("mc cp BDALTI.shx s3/oliviermeslin/BDALTI2/BDALTI_D035.shx")
 
 # %%
-from osgeo import gdal
-import numpy as np
-import pandas as pd
-
 ds = gdal.Open("BDALTI.tif")
 band = ds.GetRasterBand(1)
 
@@ -88,13 +84,17 @@ mask_flat = valid_mask.flatten()
 # Assign NaN to invalid pixels
 values_flat = np.where(mask_flat, values_flat, np.nan)
 
-df = pd.DataFrame({
+# %%
+# Convert to Polars
+df = pl.DataFrame({
     'x': x_flat,
     'y': y_flat,
-    'value': values_flat
+    'value': values_flat,
+    'departement': "A AJOUTER"
 })
+df.head(10)
 
-
+# Write to S3
 
 
 # %%
@@ -103,7 +103,7 @@ import numpy as np
 
 # Assuming df columns: x, y, value
 # Pivot to wide format to get 2D array for plotting
-pivot_table = df.pivot(index='y', columns='x', values='value')
+pivot_table = df.to_pandas().pivot(index='y', columns='x', values='value')
 
 plt.figure()
 plt.imshow(pivot_table, origin='lower', cmap='terrain', aspect='auto')
