@@ -16,7 +16,7 @@ path = 's3://oliviermeslin/BDALTI/'
 # List all files recursively
 files = fs.ls(path, detail=False)
 # %%
-for file in files:
+for file in files[0:1]:
     print(file)
 
     # Extract the area
@@ -29,19 +29,22 @@ for file in files:
     # Open the TIFF file
     dataset = gdal.Open('BDALTI.tif', gdal.GA_ReadOnly)
     band = dataset.GetRasterBand(1)
+    
+    # Read raster data
+    data = band.ReadAsArray()
 
     # Get NODATA value
     nodata = band.GetNoDataValue()
 
     # Create mask for valid data pixels
     if nodata is not None:
-    valid_mask = data != nodata
+        valid_mask = data != nodata
     else:
-    # If no nodata value assigned, create mask with non-zero data (optional)
-    valid_mask = np.ones(data.shape, dtype=bool)
+        # If no nodata value assigned, create mask with non-zero data (optional)
+        valid_mask = np.ones(data.shape, dtype=bool)
 
     # Geotransform
-    gt = ds.GetGeoTransform()
+    gt = dataset.GetGeoTransform()
     rows, cols = data.shape
     col_indices = np.arange(cols)
     row_indices = np.arange(rows)
@@ -60,31 +63,24 @@ for file in files:
     # Assign NaN to invalid pixels
     values_flat = np.where(mask_flat, values_flat, np.nan)
 
+    # Convert to Polars
+    df = pl.DataFrame(
+        {
+            'x': x_flat,
+            'y': y_flat,
+            'value': values_flat,
+            'departement': area
+        }
+    )
 
+    # Write to S3
+    with fs.open(path, "wb") as f:
+        df.write_parquet(
+            "s3://oliviermeslin/BDALTI_parquet/",
+            use_pyarrow=True,
+            pyarrow_options={"partition_cols": ["departement"]}
+        )
 
-
-
-# %%
-
-# %%
-# Open the TIFF file
-dataset = gdal.Open('BDALTI.tif', gdal.GA_ReadOnly)
-band = dataset.GetRasterBand(1)
-# Get NODATA value
-nodata = band.GetNoDataValue()
-
-# Read raster data as array
-array = band.ReadAsArray()
-
-# Mask nodata values by setting them to np.nan
-if nodata is not None:
-    array = np.where(array == nodata, np.nan, array)
-
-# Plot using matplotlib
-plt.imshow(array, cmap='terrain')
-plt.colorbar()
-plt.title('Map from GeoTIFF using GDAL')
-plt.show()
 # %%
 from osgeo import gdal, ogr
 
