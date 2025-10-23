@@ -48,13 +48,13 @@ asc_urls = sorted(set(asc_urls))
 # %%
 for file_url in asc_urls:
     # Detect departement
-    prefix = r'https://data\.geopf\.fr/telechargement/download/BDALTI/BDALTIV2_2-0_25M_ASC_LAMB93-IGN69_'
+    prefix = r'https://data\.geopf\.fr/telechargement/download/BDALTI/BDALTIV2_2-0_25M_ASC_LAMB93-(IGN69|IGN78C)_'
 
     pattern = prefix + r'([^_]+)'
 
     match = re.search(pattern, file_url)
     if match:
-        departement = match.group(1)
+        departement = match.group(2)
         print(departement)
     else:
         raise ValueError("No departement found")
@@ -79,10 +79,10 @@ for file_url in asc_urls:
 
     print("Converting data")
     gdal.BuildVRT('out.vrt',glob.glob("data/**/*.asc", recursive=True))
-    gdal.Translate('BDALTI.tif','out.vrt',format='gtiff')
+    gdal.Translate('BDALTI.tif', 'out.vrt', format='gtiff')
 
     print("Writing data to S3")
-    os.system(f"mc cp BDALTI.tif s3/oliviermeslin/BDALTI/BDALTI_{departement}.tif")
+    os.system(f"mc cp BDALTI.tif s3/oliviermeslin/BDALTI/BDALTI_tif/BDALTI_{departement}.tif")
 
 # %%
 # Map the altitude
