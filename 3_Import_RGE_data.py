@@ -34,13 +34,13 @@ asc_urls = sorted(set(asc_urls))
 # %%
 for file_url in asc_urls:
     # Detect departement
-    prefix = r'https://data\.geopf\.fr/telechargement/download/RGEALTI/RGEALTI_2-0_5M_ASC_LAMB93-IGN69_'
+    prefix = r'https://data\.geopf\.fr/telechargement/download/RGEALTI/RGEALTI_2-0_5M_ASC_LAMB93-(IGN69|IGN78C)_'
 
     pattern = prefix + r'([^_]+)'
 
     match = re.search(pattern, file_url)
     if match:
-        departement = match.group(1)
+        departement = match.group(2)
         print(departement)
     else:
         raise ValueError("No departement found")
