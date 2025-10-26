@@ -78,7 +78,7 @@ for file_url in asc_urls:
         archive.extract(path='./data/', targets=list_compressed_files)
 
     print("Converting data")
-    gdal.BuildVRT('out.vrt',glob.glob("data/**/*.asc", recursive=True))
+    gdal.BuildVRT('out.vrt', glob.glob("data/**/*.asc", recursive=True))
     gdal.Translate('BDALTI.tif', 'out.vrt', format='gtiff')
 
     print("Writing data to S3")
