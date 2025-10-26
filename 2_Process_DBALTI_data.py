@@ -11,11 +11,12 @@ import re
 fs = s3fs.S3FileSystem(anon=False)  # set anon=True for public buckets
 
 # Define your S3 path
-path = 's3://oliviermeslin/BDALTI/'
+path = 's3://oliviermeslin/BDALTI/BDALTI_tif/'
 
 # List all files recursively
 files = fs.ls(path, detail=False)
 
+# %%
 # Loop over all files and export data as Parquet
 for file in files:
     print(file)
@@ -77,9 +78,8 @@ for file in files:
     # Write to S3
     with fs.open(path, "wb") as f:
         df.write_parquet(
-            "s3://oliviermeslin/BDALTI_parquet/",
-            use_pyarrow=True,
-            pyarrow_options={"partition_cols": ["departement"]}
+            f"s3://oliviermeslin/BDALTI/BDALTI_parquet/departement={area}/data.parquet",
+            use_pyarrow=True
         )
 
 # %%
