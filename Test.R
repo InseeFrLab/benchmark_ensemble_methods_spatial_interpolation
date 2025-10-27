@@ -30,5 +30,10 @@ dbExecute(
 
 rgealti <- tbl(conn_ddb, "rgealti") 
 
-bdalti  |> summarise(n = n() / 1e6, .by = departement) |> arrange(departement)
-rgealti |> summarise(n = n() / 1e6, .by = departement) |> arrange(departement)
+bdalti  |> summarise(nb_bdalti = n() / 1e6, .by = departement) |>
+  left_join(
+rgealti |> summarise(nb_rgealti = n() / 1e6, .by = departement),
+by = "departement"
+) |> 
+  mutate(ratio = nb_rgealti / nb_bdalti) |> 
+  arrange(departement)
